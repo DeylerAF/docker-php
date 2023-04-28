@@ -1,0 +1,70 @@
+version: '3'
+
+# Define the services
+services:
+  # Define the database service
+  db:
+    image: mysql:5.7 # Use the MySQL 5.7 image
+    restart: always # Always restart the container if it stops
+    command:
+      - '--port=${DB_PORT}' # Set the default port for the database
+      - '--character-set-server=utf8mb4' # Set the default character set for the database
+      - '--collation-server=utf8mb4_unicode_ci' # Set the default collation for the database
+    environment:
+      TZ: "UTC" # Set the default time zone for the database
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD} # Set the root password for the database
+      MYSQL_DATABASE: app # Create a new database for the application
+      MYSQL_USER: myuser # Create a new non-root user for the database
+      MYSQL_PASSWORD: ${DB_USER_PASSWORD} # Set a password for the new user
+    volumes:
+      - db_data:/var/lib/mysql # Mount the volume to persist data
+    networks:
+      my-network:
+        ipv4_address: 172.16.238.10 # Assign a static IP address to the container
+
+  # Define the phpMyAdmin service
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest # Use the latest phpMyAdmin image
+    restart: always # Always restart the container if it stops
+    environment:
+      PMA_HOST: db # Set the database host for phpMyAdmin
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD} # Set the root password for the database
+    ports:
+      - "8181:80" # Map port 8181 on the host to port 80 on the container
+    depends_on:
+      - db # Depend on the database service
+    networks:
+      my-network:
+        ipv4_address: 172.16.238.20 # Assign a static IP address to the container
+
+  # Define the app service
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile # Use the specified Dockerfile for building the image
+    restart: always # Always restart the container if it stops
+    volumes:
+      - app:/var/www/html # Mount the volume to share the code
+      - php_data:/usr/local/etc/php # Mount the volume to persist PHP settings
+    ports:
+      - "8080:80" # Map port 8080 on the host to port 80 on the container
+    depends_on:
+      - db # Depend on the database service
+    networks:
+      my-network:
+        ipv4_address: 172.16.238.30 # Assign a static IP address to the container
+
+# Define the network
+networks:
+  my-network:
+    driver: bridge # Use the bridge driver
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.16.238.0/24 # Use the IP range 172.16.238.0/24
+
+# Define the volumes
+volumes:
+  db_data: # Define the volume to persist database data
+  php_data: # Define the volume to persist PHP settings
+  app: # Define the volume to share the code
