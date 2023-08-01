@@ -10,6 +10,15 @@ EXPOSE 80
 # Copy php.ini to the correct location
 COPY php.ini /usr/local/etc/php/
 
+# Set the working directory to /var/www/html
+WORKDIR /var/www/html
+
+# Clone the repository into the container's /var/www/html directory
+RUN git clone "repository" /var/www/html
+
+# Copy the application files to the container's /var/www/html directory
+#COPY /app /var/www/html
+
 # Install required libraries and PHP extensions
 RUN apt-get update && apt-get install -y \
     libfreetype6-dev \
@@ -34,11 +43,9 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 # Set the COMPOSER_ALLOW_SUPERUSER environment variable
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
-# Clone the repository into the container's /var/www/html directory
-RUN git clone https://github.com/DeylerAF/app-php.git /var/www/html
+# Configure Apache (if needed)
+# For example, if you need to enable mod_rewrite for your application, you can use the following command:
+# RUN a2enmod rewrite
 
-# Copy the application files to the container's /var/www/html directory
-#COPY /src /var/www/html
-
-# Set the working directory to /var/www/html
-WORKDIR /var/www/html
+# Start the Apache web server when the container starts
+CMD ["apache2-foreground"]
