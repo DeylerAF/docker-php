@@ -5,6 +5,7 @@ services:
     # Define the database service
     db:
         image: mysql:5.7 # Use the MySQL 5.7 image
+        container_name: app-server-db
         restart: always # Always restart the container if it stops
         command:
             - "--port=${DB_PORT}" # Set the default port for the database
@@ -17,7 +18,7 @@ services:
             MYSQL_USER: myuser # Create a new non-root user for the database
             MYSQL_PASSWORD: ${DB_USER_PASSWORD} # Set a password for the new user
         volumes:
-            - db_data:/var/lib/mysql # Mount the volume to persist data
+            - ./db_data:/var/lib/mysql # Mount the volume to persist data
         networks:
             my-network:
                 ipv4_address: 172.16.238.10 # Assign a static IP address to the container
@@ -25,6 +26,7 @@ services:
     # Define the phpMyAdmin service
     phpmyadmin:
         image: phpmyadmin/phpmyadmin:latest # Use the latest phpMyAdmin image
+        container_name: app-server-phpmyadmin
         restart: always # Always restart the container if it stops
         environment:
             PMA_HOST: db # Set the database host for phpMyAdmin

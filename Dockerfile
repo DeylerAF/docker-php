@@ -17,7 +17,7 @@ WORKDIR /var/www/html
 COPY ./app /var/www/html
 
 # Clone the repository into the container's /var/www/html directory
-RUN git clone "repository" /var/www/html
+#RUN git clone "repository" /var/www/html
 
 
 #Install required libraries and PHP extensions
