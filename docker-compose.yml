@@ -40,9 +40,13 @@ services:
     # Define the app service
     app:
         build:
-            context: .
+            context: ./
             dockerfile: Dockerfile # Use the specified Dockerfile for building the image
+        container_name: app-server
         restart: always # Always restart the container if it stops
+        volumes:
+            - ./app:/var/www/html # Mount the volume to share the code
+            - ./config:/usr/local/etc/php/ # Mount the php configuration
         ports:
             - "8080:80" # Map port 8080 on the host to port 80 on the container
         depends_on:
@@ -62,4 +66,6 @@ networks:
 
 # Define the volumes
 volumes:
-    db_data: # Define the volume to persist database data
+    db_data: {} # Define the volume to persist database data
+    app: {} # Define the volume to share the code
+    config: {} # Define the volume to share the php configuration
