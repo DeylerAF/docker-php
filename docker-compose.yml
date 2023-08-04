@@ -18,7 +18,7 @@ services:
             MYSQL_USER: myuser # Create a new non-root user for the database
             MYSQL_PASSWORD: ${DB_USER_PASSWORD} # Set a password for the new user
         volumes:
-            - ./db_data:/var/lib/mysql # Mount the volume to persist data
+            - ./db:/var/lib/mysql # Mount the volume to persist data
         networks:
             my-network:
                 ipv4_address: 172.16.238.10 # Assign a static IP address to the container
@@ -68,6 +68,6 @@ networks:
 
 # Define the volumes
 volumes:
-    db_data: {} # Define the volume to persist database data
+    db: {} # Define the volume to persist database data
     app: {} # Define the volume to share the code
     config: {} # Define the volume to share the php configuration
