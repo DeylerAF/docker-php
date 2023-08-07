@@ -2,19 +2,23 @@
 FROM php:8.2.8-apache-bullseye
 
 # Expose port 80 for access to web server
-EXPOSE 80
+# EXPOSE 80
+# EXPOSE 443
 
 # Copy composer.json to the correct location
 #COPY composer.json /var/www/html
 
-# Copy php.ini to the correct location
-COPY ./config /usr/local/etc/php/
+# # Copy php.ini to the correct location
+# COPY ./config/php_config /usr/local/etc/php/
 
-# Set the working directory to /var/www/html
+# # # Copy php.ini to the correct location
+# COPY ./config/apache_config /etc/apache2/
+
+# # Set the working directory to /var/www/html
 WORKDIR /var/www/html
 
-# Copy the application files to the container's /var/www/html directory
-COPY ./app /var/www/html
+# # Copy the application files to the container's /var/www/html directory
+# COPY ./app /var/www/html
 
 # Clone the repository into the container's /var/www/html directory
 #RUN git clone "repository" /var/www/html
@@ -30,11 +34,11 @@ RUN apt install -y libcurl3-dev
 RUN docker-php-ext-install curl
 RUN docker-php-ext-install pdo
 RUN docker-php-ext-install pdo_mysql
+RUN docker-php-ext-install mysqli
 # RUN apt install -y zip
 # RUN apt install -y unzip
 # RUN pecl install redis
 # RUN pecl install xdebug
-# RUN docker-php-ext-install mysqli
 # RUN docker-php-ext-enable redis xdebug mysqli
 # RUN apt install -y git
 # RUN docker-php-ext-install -j$(nproc) intl
@@ -139,6 +143,8 @@ RUN docker-php-ext-install pdo_mysql
 # Install Composer
 #RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin/ --filename=composer
+
+COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
 # Set the COMPOSER_ALLOW_SUPERUSER environment variable
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
@@ -147,4 +153,19 @@ ENV COMPOSER_ALLOW_SUPERUSER=1
 # RUN a2enmod rewrite
 
 # Start the Apache web server when the container starts
-CMD ["apache2-foreground"]
+
+# COPY ./conf/apache2/ssl/dev.app.loc+3-key.pem /etc/apache2/ssl/dev.app.loc+3-key.pem
+# COPY ./conf/apache2/ssl/dev.app.loc+3.pem /etc/apache2/ssl/dev.app.loc+3.pem
+
+# COPY ./conf/apache2/sites-available/dev.app.loc.conf /etc/apache2/sites-available/dev.app.loc.conf
+# COPY ./conf/apache2/sites-available/dev.app.loc-ssl.conf /etc/apache2/sites-available/dev.app.loc-ssl.conf
+
+# CMD ["apache2-foreground"]
+CMD apachectl -D FOREGROUND
+
+RUN ln -s /etc/apache2/mods-available/ssl.load  /etc/apache2/mods-enabled/ssl.load
+RUN a2enmod rewrite
+RUN a2enmod mime
+# RUN a2ensite dev.app.loc
+# RUN a2ensite dev.app.loc-ssl
+RUN service apache2 restart
