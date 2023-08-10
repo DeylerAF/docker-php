@@ -1,9 +1,9 @@
 # Use official PHP 8.2.5 image with Apache as web server
 FROM php:8.2.8-apache-bullseye
 
-# Expose port 80 for access to web server
-# EXPOSE 80
-# EXPOSE 443
+# Expose ports
+EXPOSE 80
+EXPOSE 443
 
 # Copy composer.json to the correct location
 #COPY composer.json /var/www/html
@@ -29,12 +29,14 @@ WORKDIR /var/www/html
 RUN apt update
 RUN apt upgrade -y
 RUN apt install -y apt-utils
+RUN apt install -y openssl
 RUN apt install -y curl
 RUN apt install -y libcurl3-dev
 RUN docker-php-ext-install curl
 RUN docker-php-ext-install pdo
 RUN docker-php-ext-install pdo_mysql
 RUN docker-php-ext-install mysqli
+RUN docker-php-ext-enable mysqli
 # RUN apt install -y zip
 # RUN apt install -y unzip
 # RUN pecl install redis
@@ -148,24 +150,26 @@ COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
 # Set the COMPOSER_ALLOW_SUPERUSER environment variable
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
-# Configure Apache (if needed)
-# For example, if you need to enable mod_rewrite for your application, you can use the following command:
-# RUN a2enmod rewrite
+# Generate a self-signed SSL certificate
+RUN openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/localhost.key -out /etc/ssl/certs/localhost.crt -subj "/C=US/ST=State/L=City/O=Organization/OU=Unit/CN=localhost"
+
+# Configure Apache with SSL
+RUN a2enmod ssl
+RUN a2ensite default-ssl
+
+# Update Apache config to use the self-signed certificate
+RUN sed -i 's/\/etc\/ssl\/certs\/ssl-cert-snakeoil.pem/\/etc\/ssl\/certs\/localhost.crt/g' /etc/apache2/sites-available/default-ssl.conf
+RUN sed -i 's/\/etc\/ssl\/private\/ssl-cert-snakeoil.key/\/etc\/ssl\/private\/localhost.key/g' /etc/apache2/sites-available/default-ssl.conf
+
+
+# Enable default SSL site
+RUN a2ensite default-ssl
+
+# Restart Apache to apply changes
+RUN service apache2 restart
+
+# # CMD ["apache2-foreground"]
+# CMD apachectl -D FOREGROUND
 
 # Start the Apache web server when the container starts
-
-# COPY ./conf/apache2/ssl/dev.app.loc+3-key.pem /etc/apache2/ssl/dev.app.loc+3-key.pem
-# COPY ./conf/apache2/ssl/dev.app.loc+3.pem /etc/apache2/ssl/dev.app.loc+3.pem
-
-# COPY ./conf/apache2/sites-available/dev.app.loc.conf /etc/apache2/sites-available/dev.app.loc.conf
-# COPY ./conf/apache2/sites-available/dev.app.loc-ssl.conf /etc/apache2/sites-available/dev.app.loc-ssl.conf
-
-# CMD ["apache2-foreground"]
-CMD apachectl -D FOREGROUND
-
-RUN ln -s /etc/apache2/mods-available/ssl.load  /etc/apache2/mods-enabled/ssl.load
-RUN a2enmod rewrite
-RUN a2enmod mime
-# RUN a2ensite dev.app.loc
-# RUN a2ensite dev.app.loc-ssl
-RUN service apache2 restart
+CMD ["apache2-foreground"]

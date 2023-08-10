@@ -11,13 +11,13 @@ services:
     # Define the database service
     db:
         image: mysql:latest # Use the MySQL image
-        container_name: app-server-db
+        container_name: msql_db
         restart: always # Always restart the container if it stops
         ports:
             - "${DB_PORT}:${DB_PORT}" # Map the port on the host to the port on the container
         volumes:
             - ./db:/var/lib/mysql:delegated # Mount the volume to persist data
-            - ./conf/mysql/conf/my.cnf:/etc/my.cnf # Mount the configuration file
+            # - ./conf/mysql/conf/my.cnf:/etc/my.cnf # Mount the configuration file
         command:
             - "--default-authentication-plugin=mysql_native_password" # Set the default authentication plugin for the database
             - "--port=${DB_PORT}" # Set the default port for the database
@@ -28,15 +28,16 @@ services:
             MYSQL_ROOT_PASSWORD: ${DB_PASSWORD} # Set the root password for the database
             MYSQL_DATABASE: database # Create a new database for the application
             MYSQL_USER: myuser # Create a new non-root user for the database
-            MYSQL_PASSWORD: ${DB_USER_PASSWORD} # Set a password for the new user
+            MYSQL_PASSWORD: myuserpassword # Set a password for the new user
             MYSQL_TCP_PORT: ${DB_PORT} # Set the default port for the database
+            # MYSQL_RANDOM_ROOT_PASSWORD: "1"
         networks:
             local-network:
 
     # Define the phpMyAdmin service
     phpmyadmin:
         image: phpmyadmin/phpmyadmin:latest # Use the latest phpMyAdmin image
-        container_name: app-server-phpmyadmin
+        container_name: pma
         restart: always # Always restart the container if it stops
         environment:
             PMA_HOST: db # Set the database host for phpMyAdmin
@@ -53,7 +54,7 @@ services:
         build:
             context: ./
             dockerfile: Dockerfile # Use the specified Dockerfile for building the image
-        container_name: app-server
+        container_name: app
         restart: always # Always restart the container if it stops
         depends_on:
             - db # Depend on the database service
@@ -63,8 +64,7 @@ services:
         volumes:
             - ./app:/var/www/html # Mount the volume to share the code
             - ./conf/php:/usr/local/etc/php # Mount the php configuration
-            - ./conf/apche2/ssl:/etc/apache2/ssl # Mount the SSL certificate directory to the container
-            - ./conf/apache2:/etc/apache2 # Mount your Apache configuration file
+            # - ./conf/apache2:/etc/apache2 # Mount your Apache configuration file
         networks:
             local-network:
 

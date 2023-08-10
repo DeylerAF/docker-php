@@ -1,0 +1,57 @@
+# Use the base image
+FROM php:8.2.8-apache-bullseye
+
+# # Set the working directory to /var/www/html
+WORKDIR /var/www/html
+
+# Update and install required packages
+RUN apt-get update && \
+    apt-get install -y \
+    curl \
+    libnss3-tools && \
+    rm -rf /var/lib/apt/lists/*
+
+# # Install mkcert
+# RUN curl -Lo /usr/local/bin/mkcert https://github.com/FiloSottile/mkcert/releases/download/v1.4.3/mkcert-v1.4.3-linux-amd64 && \
+#     chmod +x /usr/local/bin/mkcert
+
+# # Create a directory for certificates
+# RUN mkdir -p /certs
+
+# # Generate SSL certificate using mkcert
+# RUN mkcert -install && \
+#     mkcert -cert-file /certs/localhost.crt -key-file /certs/localhost.key localhost
+
+# # Enable SSL module in Apache
+# RUN a2enmod ssl
+
+# # Copy SSL certificate and key to Apache directory
+# RUN cp /certs/localhost.crt /etc/ssl/certs/ && \
+#     cp /certs/localhost.key /etc/ssl/private/
+
+# # # Configure Apache to use SSL certificate
+# COPY ./conf/apache2/sites-available /etc/apache2/sites-available
+# # RUN echo "SSLCertificateFile /etc/ssl/certs/localhost.crt" >> /etc/apache2/sites-available/default-ssl.conf && \
+# #     echo "SSLCertificateKeyFile /etc/ssl/private/localhost.key" >> /etc/apache2/sites-available/default-ssl.conf
+
+# Generate a self-signed SSL certificate
+RUN openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/localhost.key -out /etc/ssl/certs/localhost.crt -subj "/C=US/ST=State/L=City/O=Organization/OU=Unit/CN=localhost"
+
+# Configure Apache with SSL
+RUN a2enmod ssl
+RUN a2ensite default-ssl
+
+# Update Apache config to use the self-signed certificate
+RUN sed -i 's/\/etc\/ssl\/certs\/ssl-cert-snakeoil.pem/\/etc\/ssl\/certs\/localhost.crt/g' /etc/apache2/sites-available/default-ssl.conf
+RUN sed -i 's/\/etc\/ssl\/private\/ssl-cert-snakeoil.key/\/etc\/ssl\/private\/localhost.key/g' /etc/apache2/sites-available/default-ssl.conf
+
+
+# Enable default SSL site
+RUN a2ensite default-ssl
+
+# Restart Apache to apply changes
+RUN service apache2 restart
+
+# Expose ports
+EXPOSE 80
+EXPOSE 443
