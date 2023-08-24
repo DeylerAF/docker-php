@@ -1,0 +1,55 @@
+version: "3"
+services:
+    db:
+        image: mysql:latest
+        container_name: app-mysql
+        restart: always
+        volumes:
+            - ./db:/var/lib/mysql
+        networks:
+            app-network:
+        ports:
+            - "3307:3306"
+        command:
+            - "--character-set-server=utf8mb4"
+            - "--collation-server=utf8mb4_unicode_ci"
+        environment:
+            TZ: "UTC"
+            MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+            MYSQL_DATABASE: database
+            MYSQL_USER: ${DB_USER}
+            MYSQL_PASSWORD: ${DB_USER_PASSWORD}
+    phpmyadmin:
+        image: phpmyadmin/phpmyadmin:latest
+        container_name: app-pma
+        restart: always
+        links:
+            - db
+        depends_on:
+            - db
+        networks:
+            app-network:
+        ports:
+            - "8081:80"
+        environment:
+            PMA_HOST: db
+            MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+    wordpress:
+        image: php:8.2.9-apache-bullseye
+        container_name: app
+        restart: always
+        links:
+            - db
+        depends_on:
+            - db
+        volumes:
+            - ./app:/var/www/html
+        networks:
+            app-network:
+        ports:
+            - 8080:80
+networks:
+    app-network:
+volumes:
+    db:
+    app:
